@@ -3,10 +3,12 @@ package aws
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/keyvaluetags"
 )
 
 func dataSourceAwsEip() *schema.Resource {
@@ -14,15 +16,51 @@ func dataSourceAwsEip() *schema.Resource {
 		Read: dataSourceAwsEipRead,
 
 		Schema: map[string]*schema.Schema{
+			"association_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"domain": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"filter": ec2CustomFiltersSchema(),
 			"id": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
+			"instance_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"network_interface_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"network_interface_owner_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"private_ip": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"private_dns": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"public_ip": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
+			},
+			"public_dns": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"public_ipv4_pool": {
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"tags": tagsSchemaComputed(),
@@ -58,7 +96,6 @@ func dataSourceAwsEipRead(d *schema.ResourceData, meta interface{}) error {
 		req.Filters = nil
 	}
 
-	log.Printf("[DEBUG] Reading EIP: %s", req)
 	resp, err := conn.DescribeAddresses(req)
 	if err != nil {
 		return fmt.Errorf("error describing EC2 Address: %s", err)
@@ -79,8 +116,40 @@ func dataSourceAwsEipRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId(aws.StringValue(eip.PublicIp))
 	}
 
+	d.Set("association_id", eip.AssociationId)
+	d.Set("domain", eip.Domain)
+	d.Set("instance_id", eip.InstanceId)
+	d.Set("network_interface_id", eip.NetworkInterfaceId)
+	d.Set("network_interface_owner_id", eip.NetworkInterfaceOwnerId)
+
+	region := *conn.Config.Region
+
+	d.Set("private_ip", eip.PrivateIpAddress)
+	if eip.PrivateIpAddress != nil {
+		dashIP := strings.Replace(*eip.PrivateIpAddress, ".", "-", -1)
+
+		if region == "us-east-1" {
+			d.Set("private_dns", fmt.Sprintf("ip-%s.ec2.internal", dashIP))
+		} else {
+			d.Set("private_dns", fmt.Sprintf("ip-%s.%s.compute.internal", dashIP, region))
+		}
+	}
+
 	d.Set("public_ip", eip.PublicIp)
-	d.Set("tags", tagsToMap(eip.Tags))
+	if eip.PublicIp != nil {
+		dashIP := strings.Replace(*eip.PublicIp, ".", "-", -1)
+
+		if region == "us-east-1" {
+			d.Set("public_dns", fmt.Sprintf("ec2-%s.compute-1.amazonaws.com", dashIP))
+		} else {
+			d.Set("public_dns", fmt.Sprintf("ec2-%s.%s.compute.amazonaws.com", dashIP, region))
+		}
+	}
+	d.Set("public_ipv4_pool", eip.PublicIpv4Pool)
+
+	if err := d.Set("tags", keyvaluetags.Ec2KeyValueTags(eip.Tags).IgnoreAws().Map()); err != nil {
+		return fmt.Errorf("error setting tags: %s", err)
+	}
 
 	return nil
 }

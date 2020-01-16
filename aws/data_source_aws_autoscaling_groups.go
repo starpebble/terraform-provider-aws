@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func dataSourceAwsAutoscalingGroups() *schema.Resource {
@@ -119,7 +119,7 @@ func dataSourceAwsAutoscalingGroupsRead(d *schema.ResourceData, meta interface{}
 }
 
 func expandAsgTagFilters(in []interface{}) []*autoscaling.Filter {
-	out := make([]*autoscaling.Filter, len(in), len(in))
+	out := make([]*autoscaling.Filter, len(in))
 	for i, filter := range in {
 		m := filter.(map[string]interface{})
 		values := expandStringList(m["values"].(*schema.Set).List())

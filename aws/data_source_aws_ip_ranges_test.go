@@ -9,17 +9,34 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-func TestAccAWSIPRanges(t *testing.T) {
+func TestAccAWSIPRanges_basic(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAWSIPRangesConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccAWSIPRangesCheckAttributes("data.aws_ip_ranges.some"),
+					testAccAWSIPRangesCheckCidrBlocksAttribute("data.aws_ip_ranges.some", "cidr_blocks"),
+					testAccAWSIPRangesCheckCidrBlocksAttribute("data.aws_ip_ranges.some", "ipv6_cidr_blocks"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSIPRanges_Url(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSIPRangesConfigUrl,
 				Check: resource.ComposeTestCheckFunc(
 					testAccAWSIPRangesCheckAttributes("data.aws_ip_ranges.some"),
 					testAccAWSIPRangesCheckCidrBlocksAttribute("data.aws_ip_ranges.some", "cidr_blocks"),
@@ -139,5 +156,13 @@ const testAccAWSIPRangesConfig = `
 data "aws_ip_ranges" "some" {
   regions = [ "eu-west-1", "eu-central-1" ]
   services = [ "ec2" ]
+}
+`
+
+const testAccAWSIPRangesConfigUrl = `
+data "aws_ip_ranges" "some" {
+  regions  = [ "eu-west-1", "eu-central-1" ]
+  services = [ "ec2" ]
+  url      = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 }
 `

@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAwsVpcIpv4CidrBlockAssociation_basic(t *testing.T) {
@@ -134,7 +134,7 @@ func testAccCheckAwsVpcIpv4CidrBlockAssociationExists(n string, association *ec2
 const testAccAwsVpcIpv4CidrBlockAssociationConfig = `
 resource "aws_vpc" "foo" {
   cidr_block = "10.1.0.0/16"
-  tags {
+  tags = {
     Name = "terraform-testacc-vpc-ipv4-cidr-block-association"
   }
 }

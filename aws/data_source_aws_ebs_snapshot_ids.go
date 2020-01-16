@@ -7,8 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/hashcode"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func dataSourceAwsEbsSnapshotIds() *schema.Resource {
@@ -45,7 +45,7 @@ func dataSourceAwsEbsSnapshotIdsRead(d *schema.ResourceData, meta interface{}) e
 	filters, filtersOk := d.GetOk("filter")
 	owners, ownersOk := d.GetOk("owners")
 
-	if restorableUsers == false && filtersOk == false && ownersOk == false {
+	if restorableUsers == false && !filtersOk && !ownersOk {
 		return fmt.Errorf("One of filters, restorable_by_user_ids, or owners must be assigned")
 	}
 

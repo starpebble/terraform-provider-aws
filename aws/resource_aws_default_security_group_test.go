@@ -7,8 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSDefaultSecurityGroup_basic(t *testing.T) {
@@ -141,7 +141,7 @@ func testAccCheckAWSDefaultSecurityGroupAttributes(group *ec2.SecurityGroup) res
 const testAccAWSDefaultSecurityGroupConfig = `
 resource "aws_vpc" "foo" {
   cidr_block = "10.1.0.0/16"
-	tags {
+	tags = {
 		Name = "terraform-testacc-default-security-group"
 	}
 }
@@ -163,7 +163,7 @@ resource "aws_default_security_group" "web" {
     cidr_blocks = ["10.0.0.0/8"]
   }
 
-  tags {
+  tags = {
     Name = "tf-acc-test"
   }
 }
@@ -182,7 +182,7 @@ resource "aws_default_security_group" "web" {
     cidr_blocks = ["10.0.0.0/8"]
   }
 
-  tags {
+  tags = {
     Name = "tf-acc-test"
   }
 }`

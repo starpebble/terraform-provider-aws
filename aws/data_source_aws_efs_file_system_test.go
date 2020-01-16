@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccDataSourceAwsEfsFileSystem(t *testing.T) {
@@ -20,8 +20,8 @@ func TestAccDataSourceAwsEfsFileSystem(t *testing.T) {
 					resource.TestCheckResourceAttrPair("data.aws_efs_file_system.by_id", "arn", "aws_efs_file_system.test", "arn"),
 					testAccDataSourceAwsEfsFileSystemCheck("data.aws_efs_file_system.by_creation_token"),
 					testAccDataSourceAwsEfsFileSystemCheck("data.aws_efs_file_system.by_id"),
-					resource.TestMatchResourceAttr("data.aws_efs_file_system.by_creation_token", "dns_name", regexp.MustCompile("^[^.]+.efs.([a-z]{2}-(gov-)?[a-z]+-\\d{1})?.amazonaws.com$")),
-					resource.TestMatchResourceAttr("data.aws_efs_file_system.by_id", "dns_name", regexp.MustCompile("^[^.]+.efs.([a-z]{2}-(gov-)?[a-z]+-\\d{1})?.amazonaws.com$")),
+					resource.TestMatchResourceAttr("data.aws_efs_file_system.by_creation_token", "dns_name", regexp.MustCompile(`^[^.]+.efs.([a-z]{2}-(gov-)?[a-z]+-\d{1})?.amazonaws.com$`)),
+					resource.TestMatchResourceAttr("data.aws_efs_file_system.by_id", "dns_name", regexp.MustCompile(`^[^.]+.efs.([a-z]{2}-(gov-)?[a-z]+-\d{1})?.amazonaws.com$`)),
 				),
 			},
 		},

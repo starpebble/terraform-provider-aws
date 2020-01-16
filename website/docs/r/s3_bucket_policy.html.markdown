@@ -1,12 +1,12 @@
 ---
+subcategory: "S3"
 layout: "aws"
 page_title: "AWS: aws_s3_bucket_policy"
-sidebar_current: "docs-aws-resource-s3-bucket-policy"
 description: |-
   Attaches a policy to an S3 bucket resource.
 ---
 
-# aws_s3_bucket_policy
+# Resource: aws_s3_bucket_policy
 
 Attaches a policy to an S3 bucket resource.
 
@@ -35,8 +35,8 @@ resource "aws_s3_bucket_policy" "b" {
       "Resource": "arn:aws:s3:::my_tf_test_bucket/*",
       "Condition": {
          "IpAddress": {"aws:SourceIp": "8.8.8.8/32"}
-      } 
-    } 
+      }
+    }
   ]
 }
 POLICY
@@ -48,4 +48,12 @@ POLICY
 The following arguments are supported:
 
 * `bucket` - (Required) The name of the bucket to which to apply the policy.
-* `policy` - (Required) The text of the policy. For more information about building AWS IAM policy documents with Terraform, see the [AWS IAM Policy Document Guide](/docs/providers/aws/guides/iam-policy-documents.html).
+* `policy` - (Required) The text of the policy. For more information about building AWS IAM policy documents with Terraform, see the [AWS IAM Policy Document Guide](https://learn.hashicorp.com/terraform/aws/iam-policy).
+
+## Import
+
+S3 bucket policies can be imported using the bucket name, e.g.
+
+```
+$ terraform import aws_s3_bucket_policy.example my-bucket-name
+```

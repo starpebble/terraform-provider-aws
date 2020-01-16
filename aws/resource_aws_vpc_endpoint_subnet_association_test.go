@@ -7,8 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSVpcEndpointSubnetAssociation_basic(t *testing.T) {
@@ -128,7 +128,7 @@ func testAccCheckVpcEndpointSubnetAssociationExists(n string, vpce *ec2.VpcEndpo
 const testAccVpcEndpointSubnetAssociationConfig_basic = `
 resource "aws_vpc" "foo" {
   cidr_block = "10.0.0.0/16"
-  tags {
+  tags = {
     Name = "terraform-testacc-vpc-endpoint-subnet-association"
   }
 }
@@ -154,7 +154,7 @@ resource "aws_subnet" "sn" {
   vpc_id            = "${aws_vpc.foo.id}"
   availability_zone = "${data.aws_availability_zones.available.names[0]}"
   cidr_block        = "10.0.0.0/17"
-  tags {
+  tags = {
     Name = "tf-acc-vpc-endpoint-subnet-association"
   }
 }
@@ -168,7 +168,7 @@ resource "aws_vpc_endpoint_subnet_association" "a" {
 const testAccVpcEndpointSubnetAssociationConfig_multiple = `
 resource "aws_vpc" "foo" {
   cidr_block = "10.0.0.0/16"
-  tags {
+  tags = {
     Name = "terraform-testacc-vpc-endpoint-subnet-association"
   }
 }
@@ -196,7 +196,7 @@ resource "aws_subnet" "sn" {
   vpc_id            = "${aws_vpc.foo.id}"
   availability_zone = "${data.aws_availability_zones.available.names[count.index]}"
   cidr_block        = "${cidrsubnet(aws_vpc.foo.cidr_block, 2, count.index)}"
-  tags {
+  tags = {
     Name = "${format("tf-acc-vpc-endpoint-subnet-association-%d", count.index + 1)}"
   }
 }

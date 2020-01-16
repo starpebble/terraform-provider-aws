@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceAwsIamGroupMembership() *schema.Resource {
@@ -130,11 +130,8 @@ func resourceAwsIamGroupMembershipDelete(d *schema.ResourceData, meta interface{
 	userList := expandStringList(d.Get("users").(*schema.Set).List())
 	group := d.Get("group").(string)
 
-	if err := removeUsersFromGroup(conn, userList, group); err != nil {
-		return err
-	}
-
-	return nil
+	err := removeUsersFromGroup(conn, userList, group)
+	return err
 }
 
 func removeUsersFromGroup(conn *iam.IAM, users []*string, group string) error {

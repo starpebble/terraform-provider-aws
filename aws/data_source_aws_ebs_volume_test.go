@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSEbsVolumeDataSource_basic(t *testing.T) {
@@ -67,7 +67,7 @@ resource "aws_ebs_volume" "example" {
   availability_zone = "${data.aws_availability_zones.available.names[0]}"
   type = "gp2"
   size = 40
-  tags {
+  tags = {
     Name = "External Volume"
   }
 }
@@ -92,7 +92,7 @@ resource "aws_ebs_volume" "external1" {
   availability_zone = "${data.aws_availability_zones.available.names[0]}"
   type = "gp2"
   size = 10
-  tags {
+  tags = {
     Name = "External Volume 1"
   }
 }

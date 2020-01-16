@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 )
 
 func TestAccAWSVpc_coreMismatchedDiffs(t *testing.T) {
@@ -31,7 +31,7 @@ func TestAccAWSVpc_coreMismatchedDiffs(t *testing.T) {
 const testMatchedDiffs = `resource "aws_vpc" "test" {
     cidr_block = "10.0.0.0/16"
 
-    tags {
+  tags = {
         Name = "terraform-testacc-repro-GH-4965"
     }
 

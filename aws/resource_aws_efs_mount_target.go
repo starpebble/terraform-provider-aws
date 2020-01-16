@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/efs"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceAwsEfsMountTarget() *schema.Resource {
@@ -221,9 +221,8 @@ func resourceAwsEfsMountTargetRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	region := meta.(*AWSClient).region
-	err = d.Set("dns_name", resourceAwsEfsMountTargetDnsName(*mt.FileSystemId, region))
-	if err != nil {
-		return err
+	if err := d.Set("dns_name", resourceAwsEfsMountTargetDnsName(aws.StringValue(mt.FileSystemId), region)); err != nil {
+		return fmt.Errorf("error setting dns_name: %s", err)
 	}
 
 	return nil

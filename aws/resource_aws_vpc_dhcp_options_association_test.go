@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSDHCPOptionsAssociation_basic(t *testing.T) {
@@ -78,7 +78,7 @@ func testAccCheckDHCPOptionsAssociationExist(n string, vpc *ec2.Vpc) resource.Te
 const testAccDHCPOptionsAssociationConfig = `
 resource "aws_vpc" "foo" {
 	cidr_block = "10.1.0.0/16"
-	tags {
+	tags = {
 		Name = "terraform-testacc-vpc-dhcp-options-association"
 	}
 }
@@ -90,7 +90,7 @@ resource "aws_vpc_dhcp_options" "foo" {
 	netbios_name_servers = ["127.0.0.1"]
 	netbios_node_type = 2
 
-	tags {
+	tags = {
 		Name = "foo"
 	}
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSVpnGatewayAttachment_basic(t *testing.T) {
@@ -144,7 +144,7 @@ func testAccCheckVpnGatewayAttachmentDestroy(s *terraform.State) error {
 const testAccNoVpnGatewayAttachmentConfig = `
 resource "aws_vpc" "test" {
 	cidr_block = "10.0.0.0/16"
-	tags {
+	tags = {
 		Name = "terraform-testacc-vpn-gateway-attachment-basic"
 	}
 }
@@ -155,7 +155,7 @@ resource "aws_vpn_gateway" "test" { }
 const testAccVpnGatewayAttachmentConfig = `
 resource "aws_vpc" "test" {
 	cidr_block = "10.0.0.0/16"
-	tags {
+	tags = {
 		Name = "terraform-testacc-vpn-gateway-attachment-deleted"
 	}
 }

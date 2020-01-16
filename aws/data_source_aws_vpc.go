@@ -7,7 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/keyvaluetags"
 )
 
 func dataSourceAwsVpc() *schema.Resource {
@@ -104,6 +105,11 @@ func dataSourceAwsVpc() *schema.Resource {
 			},
 
 			"tags": tagsSchemaComputed(),
+
+			"owner_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -171,7 +177,12 @@ func dataSourceAwsVpcRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("instance_tenancy", vpc.InstanceTenancy)
 	d.Set("default", vpc.IsDefault)
 	d.Set("state", vpc.State)
-	d.Set("tags", tagsToMap(vpc.Tags))
+
+	if err := d.Set("tags", keyvaluetags.Ec2KeyValueTags(vpc.Tags).IgnoreAws().Map()); err != nil {
+		return fmt.Errorf("error setting tags: %s", err)
+	}
+
+	d.Set("owner_id", vpc.OwnerId)
 
 	arn := arn.ARN{
 		Partition: meta.(*AWSClient).partition,

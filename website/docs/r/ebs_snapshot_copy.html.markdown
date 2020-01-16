@@ -1,12 +1,12 @@
 ---
+subcategory: "EC2"
 layout: "aws"
 page_title: "AWS: aws_ebs_snapshot_copy"
-sidebar_current: "docs-aws-resource-ebs-snapshot-copy"
 description: |-
   Duplicates an existing Amazon snapshot
 ---
 
-# aws_ebs_snapshot_copy
+# Resource: aws_ebs_snapshot_copy
 
 Creates a Snapshot of a snapshot.
 
@@ -17,7 +17,7 @@ resource "aws_ebs_volume" "example" {
   availability_zone = "us-west-2a"
   size              = 40
 
-  tags {
+  tags = {
     Name = "HelloWorld"
   }
 }
@@ -25,7 +25,7 @@ resource "aws_ebs_volume" "example" {
 resource "aws_ebs_snapshot" "example_snapshot" {
   volume_id = "${aws_ebs_volume.example.id}"
 
-  tags {
+  tags = {
     Name = "HelloWorld_snap"
   }
 }
@@ -34,7 +34,7 @@ resource "aws_ebs_snapshot_copy" "example_copy" {
   source_snapshot_id = "${aws_ebs_snapshot.example_snapshot.id}"
   source_region      = "us-west-2"
 
-  tags {
+  tags = {
     Name = "HelloWorld_copy_snap"
   }
 }

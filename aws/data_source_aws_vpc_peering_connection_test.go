@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccDataSourceAwsVpcPeeringConnection_basic(t *testing.T) {
@@ -71,7 +71,7 @@ const testAccDataSourceAwsVpcPeeringConnectionConfig = `
 resource "aws_vpc" "foo" {
   cidr_block = "10.1.0.0/16"
 
-  tags {
+  tags = {
 	  Name = "terraform-testacc-vpc-peering-connection-data-source-foo"
   }
 }
@@ -79,7 +79,7 @@ resource "aws_vpc" "foo" {
 resource "aws_vpc" "bar" {
   cidr_block = "10.2.0.0/16"
 
-  tags {
+  tags = {
 	  Name = "terraform-testacc-vpc-peering-connection-data-source-bar"
   }
 }
@@ -89,7 +89,7 @@ resource "aws_vpc_peering_connection" "test" {
 	peer_vpc_id = "${aws_vpc.bar.id}"
 	auto_accept = true
 
-    tags {
+  tags = {
       Name = "terraform-testacc-vpc-peering-connection-data-source-foo-to-bar"
     }
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceAwsCloudWatchLogStream() *schema.Resource {
@@ -58,9 +58,16 @@ func resourceAwsCloudWatchLogStreamCreate(d *schema.ResourceData, meta interface
 func resourceAwsCloudWatchLogStreamRead(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).cloudwatchlogsconn
 
-	ls, exists, err := lookupCloudWatchLogStream(conn, d.Id(), d.Get("log_group_name").(string), nil)
+	group := d.Get("log_group_name").(string)
+
+	ls, exists, err := lookupCloudWatchLogStream(conn, d.Id(), group, nil)
 	if err != nil {
-		return err
+		if !isAWSErr(err, cloudwatchlogs.ErrCodeResourceNotFoundException, "") {
+			return err
+		}
+
+		log.Printf("[DEBUG] container CloudWatch group %q Not Found.", group)
+		exists = false
 	}
 
 	if !exists {

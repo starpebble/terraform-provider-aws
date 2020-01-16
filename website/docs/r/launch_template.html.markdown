@@ -1,12 +1,12 @@
 ---
+subcategory: "EC2"
 layout: "aws"
 page_title: "AWS: aws_launch_template"
-sidebar_current: "docs-aws-resource-launch-template"
 description: |-
   Provides an EC2 launch template resource. Can be used to create instances or auto scaling groups.
 ---
 
-# aws_launch_template
+# Resource: aws_launch_template
 
 Provides an EC2 launch template resource. Can be used to create instances or auto scaling groups.
 
@@ -40,6 +40,10 @@ resource "aws_launch_template" "foo" {
     type = "test"
   }
 
+  elastic_inference_accelerator {
+    type = "eia1.medium"
+  }
+
   iam_instance_profile {
     name = "test"
   }
@@ -57,6 +61,10 @@ resource "aws_launch_template" "foo" {
   kernel_id = "test"
 
   key_name = "test"
+
+  license_specification {
+    license_configuration_arn = "arn:aws:license-manager:eu-west-1:123456789012:license-configuration:lic-0123456789abcdef0123456789abcdef"
+  }
 
   monitoring {
     enabled = true
@@ -77,7 +85,7 @@ resource "aws_launch_template" "foo" {
   tag_specifications {
     resource_type = "instance"
 
-    tags {
+    tags = {
       Name = "test"
     }
   }
@@ -103,6 +111,7 @@ The following arguments are supported:
 * `ebs_optimized` - If `true`, the launched EC2 instance will be EBS-optimized.
 * `elastic_gpu_specifications` - The elastic GPU to attach to the instance. See [Elastic GPU](#elastic-gpu)
   below for more details.
+* `elastic_inference_accelerator` - (Optional) Configuration block containing an Elastic Inference Accelerator to attach to the instance. See [Elastic Inference Accelerator](#elastic-inference-accelerator) below for more details.
 * `iam_instance_profile` - The IAM Instance Profile to launch the instance with. See [Instance Profile](#instance-profile)
   below for more details.
 * `image_id` - The AMI from which to launch the instance.
@@ -113,6 +122,7 @@ The following arguments are supported:
 * `instance_type` - The type of the instance.
 * `kernel_id` - The kernel ID.
 * `key_name` - The key name to use for the instance.
+* `license_specification` - A list of license specifications to associate with. See [License Specification](#license-specification) below for more details.
 * `monitoring` - The monitoring option for the instance. See [Monitoring](#monitoring) below for more details.
 * `network_interfaces` - Customize network interfaces to be attached at instance boot time. See [Network
   Interfaces](#network-interfaces) below for more details.
@@ -121,7 +131,7 @@ The following arguments are supported:
 * `security_group_names` - A list of security group names to associate with. If you are creating Instances in a VPC, use
   `vpc_security_group_ids` instead.
 * `vpc_security_group_ids` - A list of security group IDs to associate with.
-* `tag_specifications` - The tags to apply to the resources during launch. See [Tags](#tags) below for more details.
+* `tag_specifications` - The tags to apply to the resources during launch. See [Tag Specifications](#tag-specifications) below for more details.
 * `tags` - (Optional) A mapping of tags to assign to the launch template.
 * `user_data` - The Base64-encoded user data to provide when launching the instance.
 
@@ -144,7 +154,7 @@ Each `block_device_mappings` supports the following:
 
 The `ebs` block supports the following:
 
-* `delete_on_termination` - Whether the volume should be destroyed on instance termination (Default: `true`).
+* `delete_on_termination` - Whether the volume should be destroyed on instance termination (Default: `false`). See [Preserving Amazon EBS Volumes on Instance Termination](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/terminating-instances.html#preserving-volumes-on-termination) for more information.
 * `encrypted` - Enables [EBS encryption](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html)
   on the volume (Default: `false`). Cannot be used with `snapshot_id`.
 * `iops` - The amount of provisioned
@@ -173,7 +183,7 @@ Credit specification can be applied/modified to the EC2 Instance at any time.
 
 The `credit_specification` block supports the following:
 
-* `cpu_credits` - The credit option for CPU usage. Can be `"standard"` or `"unlimited"`. (Default: `"standard"`).
+* `cpu_credits` - The credit option for CPU usage. Can be `"standard"` or `"unlimited"`. T3 instances are launched as unlimited by default. T2 instances are launched as standard by default.
 
 ### Elastic GPU
 
@@ -182,6 +192,14 @@ Attach an elastic GPU the instance.
 The `elastic_gpu_specifications` block supports the following:
 
 * `type` - The [Elastic GPU Type](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/elastic-gpus.html#elastic-gpus-basics)
+
+### Elastic Inference Accelerator
+
+Attach an Elastic Inference Accelerator to the instance. Additional information about Elastic Inference in EC2 can be found in the [EC2 User Guide](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-inference.html).
+
+The `elastic_inference_accelerator` configuration block supports the following:
+
+* `type` - (Required) Accelerator type.
 
 ### Instance Profile
 
@@ -192,6 +210,14 @@ The `iam_instance_profile` block supports the following:
 
 * `arn` - The Amazon Resource Name (ARN) of the instance profile.
 * `name` - The name of the instance profile.
+
+### License Specification
+
+Associate one of more license configurations.
+
+The `license_specification` block supports the following:
+
+* `license_configuration_arn` - (Required) ARN of the license configuration.
 
 ### Market Options
 
@@ -251,7 +277,7 @@ The `placement` block supports the following:
 * `spread_domain` - Reserved for future use.
 * `tenancy` - The tenancy of the instance (if the instance is running in a VPC). Can be `default`, `dedicated`, or `host`.
 
-### Tags
+### Tag Specifications
 
 The tags to apply to the resources during launch. You can tag instances and volumes. More information can be found in the [EC2 API documentation](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_LaunchTemplateTagSpecificationRequest.html).
 

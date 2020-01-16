@@ -8,9 +8,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceAwsS3BucketInventory() *schema.Resource {
@@ -73,6 +73,7 @@ func resourceAwsS3BucketInventory() *schema.Resource {
 										ValidateFunc: validation.StringInSlice([]string{
 											s3.InventoryFormatCsv,
 											s3.InventoryFormatOrc,
+											s3.InventoryFormatParquet,
 										}, false),
 									},
 									"bucket_arn": {
@@ -81,8 +82,9 @@ func resourceAwsS3BucketInventory() *schema.Resource {
 										ValidateFunc: validateArn,
 									},
 									"account_id": {
-										Type:     schema.TypeString,
-										Optional: true,
+										Type:         schema.TypeString,
+										Optional:     true,
+										ValidateFunc: validateAwsAccountId,
 									},
 									"prefix": {
 										Type:     schema.TypeString,
@@ -168,6 +170,10 @@ func resourceAwsS3BucketInventory() *schema.Resource {
 						s3.InventoryOptionalFieldIsMultipartUploaded,
 						s3.InventoryOptionalFieldReplicationStatus,
 						s3.InventoryOptionalFieldEncryptionStatus,
+						s3.InventoryOptionalFieldObjectLockMode,
+						s3.InventoryOptionalFieldObjectLockRetainUntilDate,
+						s3.InventoryOptionalFieldObjectLockLegalHoldStatus,
+						s3.InventoryOptionalFieldIntelligentTieringAccessTier,
 					}, false),
 				},
 				Set: schema.HashString,
@@ -236,6 +242,9 @@ func resourceAwsS3BucketInventoryPut(d *schema.ResourceData, meta interface{}) e
 		}
 		return nil
 	})
+	if isResourceTimeoutError(err) {
+		_, err = conn.PutBucketInventoryConfiguration(input)
+	}
 	if err != nil {
 		return fmt.Errorf("Error putting S3 bucket inventory configuration: %s", err)
 	}
@@ -302,6 +311,14 @@ func resourceAwsS3BucketInventoryRead(d *schema.ResourceData, meta interface{}) 
 		}
 		return nil
 	})
+	if isResourceTimeoutError(err) {
+		output, err = conn.GetBucketInventoryConfiguration(input)
+		if isAWSErr(err, s3.ErrCodeNoSuchBucket, "") || isAWSErr(err, "NoSuchConfiguration", "The specified configuration does not exist.") {
+			if !d.IsNewResource() {
+				return nil
+			}
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("error getting S3 Bucket Inventory (%s): %s", d.Id(), err)
 	}
@@ -357,7 +374,7 @@ func flattenS3InventoryFilter(filter *s3.InventoryFilter) []map[string]interface
 
 	result := make([]map[string]interface{}, 0, 1)
 
-	m := make(map[string]interface{}, 0)
+	m := make(map[string]interface{})
 	if filter.Prefix != nil {
 		m["prefix"] = aws.StringValue(filter.Prefix)
 	}

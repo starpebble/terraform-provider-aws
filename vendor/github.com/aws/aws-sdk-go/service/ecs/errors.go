@@ -21,7 +21,7 @@ const (
 	// ErrCodeBlockedException for service response error code
 	// "BlockedException".
 	//
-	// Your AWS account has been blocked. For more information, Contact AWS Support
+	// Your AWS account has been blocked. For more information, contact AWS Support
 	// (http://aws.amazon.com/contact-us/).
 	ErrCodeBlockedException = "BlockedException"
 
@@ -36,17 +36,17 @@ const (
 	// ErrCodeClusterContainsContainerInstancesException for service response error code
 	// "ClusterContainsContainerInstancesException".
 	//
-	// You cannot delete a cluster that has registered container instances. You
-	// must first deregister the container instances before you can delete the cluster.
-	// For more information, see DeregisterContainerInstance.
+	// You cannot delete a cluster that has registered container instances. First,
+	// deregister the container instances before you can delete the cluster. For
+	// more information, see DeregisterContainerInstance.
 	ErrCodeClusterContainsContainerInstancesException = "ClusterContainsContainerInstancesException"
 
 	// ErrCodeClusterContainsServicesException for service response error code
 	// "ClusterContainsServicesException".
 	//
-	// You cannot delete a cluster that contains services. You must first update
-	// the service to reduce its desired task count to 0 and then delete the service.
-	// For more information, see UpdateService and DeleteService.
+	// You cannot delete a cluster that contains services. First, update the service
+	// to reduce its desired task count to 0 and then delete the service. For more
+	// information, see UpdateService and DeleteService.
 	ErrCodeClusterContainsServicesException = "ClusterContainsServicesException"
 
 	// ErrCodeClusterContainsTasksException for service response error code
@@ -68,6 +68,12 @@ const (
 	// The specified parameter is invalid. Review the available parameters for the
 	// API request.
 	ErrCodeInvalidParameterException = "InvalidParameterException"
+
+	// ErrCodeLimitExceededException for service response error code
+	// "LimitExceededException".
+	//
+	// The limit for the resource has been exceeded.
+	ErrCodeLimitExceededException = "LimitExceededException"
 
 	// ErrCodeMissingVersionException for service response error code
 	// "MissingVersionException".
@@ -98,6 +104,12 @@ const (
 	//
 	// The specified platform version does not exist.
 	ErrCodePlatformUnknownException = "PlatformUnknownException"
+
+	// ErrCodeResourceInUseException for service response error code
+	// "ResourceInUseException".
+	//
+	// The specified resource is in-use and cannot be removed.
+	ErrCodeResourceInUseException = "ResourceInUseException"
 
 	// ErrCodeResourceNotFoundException for service response error code
 	// "ResourceNotFoundException".
@@ -132,6 +144,14 @@ const (
 	// instances with ListContainerInstances. Amazon ECS container instances are
 	// cluster-specific and Region-specific.
 	ErrCodeTargetNotFoundException = "TargetNotFoundException"
+
+	// ErrCodeTaskSetNotFoundException for service response error code
+	// "TaskSetNotFoundException".
+	//
+	// The specified task set could not be found. You can view your available task
+	// sets with DescribeTaskSets. Task sets are specific to each cluster, service
+	// and Region.
+	ErrCodeTaskSetNotFoundException = "TaskSetNotFoundException"
 
 	// ErrCodeUnsupportedFeatureException for service response error code
 	// "UnsupportedFeatureException".

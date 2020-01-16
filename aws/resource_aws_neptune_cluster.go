@@ -9,9 +9,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/neptune"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/terraform-providers/terraform-provider-aws/aws/internal/keyvaluetags"
 )
 
 func resourceAwsNeptuneCluster() *schema.Resource {
@@ -237,7 +238,7 @@ func resourceAwsNeptuneCluster() *schema.Resource {
 
 func resourceAwsNeptuneClusterCreate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).neptuneconn
-	tags := tagsFromMapNeptune(d.Get("tags").(map[string]interface{}))
+	tags := keyvaluetags.New(d.Get("tags").(map[string]interface{})).IgnoreAws().NeptuneTags()
 
 	// Check if any of the parameters that require a cluster modification after creation are set
 	clusterUpdate := false
@@ -350,6 +351,13 @@ func resourceAwsNeptuneClusterCreate(d *schema.ResourceData, meta interface{}) e
 		}
 		return nil
 	})
+	if isResourceTimeoutError(err) {
+		if restoreDBClusterFromSnapshot {
+			_, err = conn.RestoreDBClusterFromSnapshot(restoreDBClusterFromSnapshotInput)
+		} else {
+			_, err = conn.CreateDBCluster(createDbClusterInput)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("error creating Neptune Cluster: %s", err)
 	}
@@ -477,8 +485,14 @@ func flattenAwsNeptuneClusterResource(d *schema.ResourceData, meta interface{}, 
 	arn := aws.StringValue(dbc.DBClusterArn)
 	d.Set("arn", arn)
 
-	if err := saveTagsNeptune(conn, d, arn); err != nil {
-		return fmt.Errorf("Failed to save tags for Neptune Cluster (%s): %s", aws.StringValue(dbc.DBClusterIdentifier), err)
+	tags, err := keyvaluetags.NeptuneListTags(conn, d.Get("arn").(string))
+
+	if err != nil {
+		return fmt.Errorf("error listing tags for Neptune Cluster (%s): %s", d.Get("arn").(string), err)
+	}
+
+	if err := d.Set("tags", tags.IgnoreAws().Map()); err != nil {
+		return fmt.Errorf("error setting tags: %s", err)
 	}
 
 	return nil
@@ -542,6 +556,9 @@ func resourceAwsNeptuneClusterUpdate(d *schema.ResourceData, meta interface{}) e
 			}
 			return nil
 		})
+		if isResourceTimeoutError(err) {
+			_, err = conn.ModifyDBCluster(req)
+		}
 		if err != nil {
 			return fmt.Errorf("Failed to modify Neptune Cluster (%s): %s", d.Id(), err)
 		}
@@ -591,12 +608,14 @@ func resourceAwsNeptuneClusterUpdate(d *schema.ResourceData, meta interface{}) e
 		}
 	}
 
-	if arn, ok := d.GetOk("arn"); ok {
-		if err := setTagsNeptune(conn, d, arn.(string)); err != nil {
-			return err
-		} else {
-			d.SetPartial("tags")
+	if d.HasChange("tags") {
+		o, n := d.GetChange("tags")
+
+		if err := keyvaluetags.NeptuneUpdateTags(conn, d.Get("arn").(string), o, n); err != nil {
+			return fmt.Errorf("error updating Neptune Cluster (%s) tags: %s", d.Get("arn").(string), err)
 		}
+
+		d.SetPartial("tags")
 	}
 
 	return resourceAwsNeptuneClusterRead(d, meta)
@@ -613,7 +632,7 @@ func resourceAwsNeptuneClusterDelete(d *schema.ResourceData, meta interface{}) e
 	skipFinalSnapshot := d.Get("skip_final_snapshot").(bool)
 	deleteOpts.SkipFinalSnapshot = aws.Bool(skipFinalSnapshot)
 
-	if skipFinalSnapshot == false {
+	if !skipFinalSnapshot {
 		if name, present := d.GetOk("final_snapshot_identifier"); present {
 			deleteOpts.FinalDBSnapshotIdentifier = aws.String(name.(string))
 		} else {
@@ -636,6 +655,9 @@ func resourceAwsNeptuneClusterDelete(d *schema.ResourceData, meta interface{}) e
 		}
 		return nil
 	})
+	if isResourceTimeoutError(err) {
+		_, err = conn.DeleteDBCluster(&deleteOpts)
+	}
 	if err != nil {
 		return fmt.Errorf("Neptune Cluster cannot be deleted: %s", err)
 	}
@@ -702,11 +724,7 @@ func setIamRoleToNeptuneCluster(clusterIdentifier string, roleArn string, conn *
 		RoleArn:             aws.String(roleArn),
 	}
 	_, err := conn.AddRoleToDBCluster(params)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func removeIamRoleFromNeptuneCluster(clusterIdentifier string, roleArn string, conn *neptune.Neptune) error {
@@ -715,11 +733,7 @@ func removeIamRoleFromNeptuneCluster(clusterIdentifier string, roleArn string, c
 		RoleArn:             aws.String(roleArn),
 	}
 	_, err := conn.RemoveRoleFromDBCluster(params)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 var resourceAwsNeptuneClusterCreatePendingStates = []string{

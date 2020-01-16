@@ -1,7 +1,7 @@
 ---
+subcategory: "VPC"
 layout: "aws"
 page_title: "AWS: aws_route"
-sidebar_current: "docs-aws-datasource-route"
 description: |-
     Provides details about a specific Route
 ---
@@ -55,6 +55,8 @@ Route whose data will be exported as attributes.
 * `instance_id` - (Optional) The Instance ID of the Route belonging to the Route Table.
 
 * `nat_gateway_id` - (Optional) The NAT Gateway ID of the Route belonging to the Route Table.
+
+* `transit_gateway_id` - (Optional) The EC2 Transit Gateway ID of the Route belonging to the Route Table.
 
 * `vpc_peering_connection_id` - (Optional) The VPC Peering Connection ID of the Route belonging to the Route Table.
 

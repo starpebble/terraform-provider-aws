@@ -6,9 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccAWSEcrRepository_basic(t *testing.T) {
@@ -34,6 +34,111 @@ func TestAccAWSEcrRepository_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccAWSEcrRepository_tags(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "aws_ecr_repository.default"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEcrRepositoryDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEcrRepositoryConfig_tags(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEcrRepositoryExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(resourceName, "tags.%", "2"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Usage", "original"),
+				),
+			},
+			{
+				Config: testAccAWSEcrRepositoryConfig_tagsChanged(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEcrRepositoryExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(resourceName, "tags.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Usage", "changed"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccAWSEcrRepository_immutability(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "aws_ecr_repository.default"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEcrRepositoryDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEcrRepositoryConfig_immutability(rName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEcrRepositoryExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(resourceName, "image_tag_mutability", "IMMUTABLE"),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccAWSEcrRepository_image_scanning_configuration(t *testing.T) {
+	rName := acctest.RandomWithPrefix("tf-acc-test")
+	resourceName := "aws_ecr_repository.default"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSEcrRepositoryDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSEcrRepositoryConfig_image_scanning_configuration(rName, true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEcrRepositoryExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "name", rName),
+					resource.TestCheckResourceAttr(resourceName, "image_scanning_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "image_scanning_configuration.0.scan_on_push", "true"),
+				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				// Test that the removal of the non-default image_scanning_configuration causes plan changes
+				Config:             testAccAWSEcrRepositoryConfig(rName),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				// Test attribute update
+				Config: testAccAWSEcrRepositoryConfig_image_scanning_configuration(rName, false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckAWSEcrRepositoryExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "image_scanning_configuration.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "image_scanning_configuration.0.scan_on_push", "false"),
+				),
+			},
+			{
+				// Test that the removal of the default image_scanning_configuration doesn't cause any plan changes
+				Config:             testAccAWSEcrRepositoryConfig(rName),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
 			},
 		},
 	})
@@ -91,7 +196,7 @@ func testAccCheckAWSEcrRepositoryRegistryID(resourceName string) resource.TestCh
 
 func testAccCheckAWSEcrRepositoryRepositoryURL(resourceName, repositoryName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		attributeValue := fmt.Sprintf("%s.dkr.%s/%s", testAccGetAccountID(), testAccGetServiceEndpoint("ecr"), repositoryName)
+		attributeValue := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s", testAccGetAccountID(), testAccGetRegion(), repositoryName)
 		return resource.TestCheckResourceAttr(resourceName, "repository_url", attributeValue)(s)
 	}
 }
@@ -99,7 +204,52 @@ func testAccCheckAWSEcrRepositoryRepositoryURL(resourceName, repositoryName stri
 func testAccAWSEcrRepositoryConfig(rName string) string {
 	return fmt.Sprintf(`
 resource "aws_ecr_repository" "default" {
-	name = %q
+  name = %q
 }
 `, rName)
+}
+
+func testAccAWSEcrRepositoryConfig_tags(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_ecr_repository" "default" {
+  name = %q
+
+  tags = {
+    Environment = "production"
+    Usage       = "original"
+  }
+}
+`, rName)
+}
+
+func testAccAWSEcrRepositoryConfig_tagsChanged(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_ecr_repository" "default" {
+  name = %q
+
+  tags = {
+    Usage = "changed"
+  }
+}
+`, rName)
+}
+
+func testAccAWSEcrRepositoryConfig_immutability(rName string) string {
+	return fmt.Sprintf(`
+resource "aws_ecr_repository" "default" {
+  name = %q
+  image_tag_mutability = "IMMUTABLE"
+}
+`, rName)
+}
+
+func testAccAWSEcrRepositoryConfig_image_scanning_configuration(rName string, scanOnPush bool) string {
+	return fmt.Sprintf(`
+resource "aws_ecr_repository" "default" {
+  name = %q
+  image_scanning_configuration {
+    scan_on_push = %t
+  }
+}
+`, rName, scanOnPush)
 }
